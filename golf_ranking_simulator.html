@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nicolai Højgaard — OWGR Top 50 Simulator</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --green-dark: #183d2b;
+            --green:      #2d6a4f;
+            --green-mid:  #40916c;
+            --green-light:#52b788;
+            --gold:       #d4a017;
+            --danger:     #c0392b;
+            --warning-bg: #fff8e1;
+            --warning-bd: #f0b429;
+            --safe-bg:    #e8f5e9;
+            --safe-bd:    #2e7d32;
+            --danger-bg:  #fdecea;
+            --danger-bd:  #c62828;
+            --bg:         #f0f4f2;
+            --gray:       #e2e8f0;
+            --text:       #1a202c;
+            --muted:      #718096;
+            --card-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ── HEADER ── */
+        header {
+            background: linear-gradient(140deg, var(--green-dark) 0%, var(--green-mid) 100%);
+            color: white;
+            padding: 30px 20px 26px;
+            text-align: center;
+        }
+        .flag { font-size: 28px; }
+        header h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.3px; margin-top: 6px; }
+        header p  { font-size: 13px; opacity: 0.78; margin-top: 4px; }
+        .data-tag {
+            display: inline-block;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 3px 12px; border-radius: 20px;
+            font-size: 11px; margin-top: 10px; font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        /* ── LAYOUT ── */
+        .container { max-width: 760px; margin: 0 auto; padding: 20px 14px 48px; }
+
+        .card {
+            background: white;
+            border-radius: 14px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 14px;
+            overflow: hidden;
+        }
+
+        .section-label {
+            padding: 16px 18px 4px;
+            font-size: 11px; font-weight: 700; letter-spacing: 0.8px;
+            text-transform: uppercase; color: var(--muted);
+        }
+
+        /* ── CURRENT STATS ── */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px; padding: 12px 16px 18px;
+        }
+        @media (max-width: 480px) {
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+            header h1 { font-size: 19px; }
+        }
+        .stat {
+            background: var(--bg); border-radius: 10px;
+            padding: 12px 8px; text-align: center;
+        }
+        .stat-val  { font-size: 26px; font-weight: 800; color: var(--green); line-height: 1.1; }
+        .stat-label{ font-size: 10px; color: var(--muted); margin-top: 5px;
+                     text-transform: uppercase; letter-spacing: 0.4px; }
+
+        /* ── RESET BUTTON ── */
+        .toolbar {
+            display: flex; align-items: center; justify-content: flex-end;
+            padding: 0 18px 2px; gap: 8px;
+        }
+        .btn-reset {
+            font-size: 11px; font-weight: 600; color: var(--muted);
+            background: var(--bg); border: 1px solid var(--gray);
+            padding: 4px 12px; border-radius: 20px; cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn-reset:hover { background: var(--gray); color: var(--text); }
+
+        /* ── TOURNAMENT ROWS ── */
+        .tourney-list { padding: 4px 14px 14px; }
+        .tourney-row {
+            display: flex; align-items: center; gap: 12px;
+            padding: 11px 4px;
+            border-bottom: 1px solid var(--gray);
+        }
+        .tourney-row:last-child { border-bottom: none; }
+
+        .t-badge {
+            width: 38px; height: 38px; min-width: 38px;
+            border-radius: 10px; display: flex;
+            align-items: center; justify-content: center;
+            font-size: 18px;
+        }
+        .b-major     { background: #fff8e1; }
+        .b-signature { background: #e8f5e9; }
+        .b-regular   { background: #e8eaf6; }
+
+        .t-info { flex: 1; min-width: 0; }
+        .t-name { font-size: 14px; font-weight: 700;
+                  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .t-date { font-size: 12px; color: var(--muted); margin-top: 1px; }
+        .t-tag  {
+            display: inline-block; font-size: 10px; font-weight: 700;
+            padding: 1px 7px; border-radius: 10px; margin-top: 3px;
+        }
+        .tg-major     { background: #fff8e1; color: #7d5e00; }
+        .tg-signature { background: #e8f5e9; color: #1b5e20; }
+        .tg-regular   { background: #e8eaf6; color: #283593; }
+        .t-winpts { font-size: 10px; color: #bbb; margin-left: 5px; }
+
+        .t-select {
+            padding: 7px 10px;
+            border: 2px solid var(--gray); border-radius: 8px;
+            font-size: 12px; background: white; cursor: pointer;
+            min-width: 160px; color: var(--text);
+            transition: border-color 0.15s;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 28px;
+        }
+        .t-select:focus { outline: none; border-color: var(--green-mid); }
+
+        .t-pts { min-width: 62px; text-align: right; }
+        .pts-v { font-size: 17px; font-weight: 800; }
+        .pts-l { font-size: 10px; color: var(--muted); text-transform: uppercase; }
+        .c-pos  { color: var(--green); }
+        .c-zero { color: #bbb; }
+        .c-na   { color: #ddd; }
+
+        /* ── PROJECTION ── */
+        .proj-row {
+            display: grid; grid-template-columns: repeat(3,1fr);
+            gap: 10px; padding: 14px 16px 6px;
+        }
+        .proj-stat {
+            background: var(--bg); border-radius: 10px;
+            padding: 13px 8px; text-align: center;
+        }
+        .proj-val   { font-size: 26px; font-weight: 800; line-height: 1.1; }
+        .proj-label { font-size: 10px; color: var(--muted); margin-top: 5px;
+                      text-transform: uppercase; letter-spacing: 0.4px; }
+        .proj-delta { font-size: 11px; font-weight: 600; margin-top: 5px; }
+        .d-up   { color: #2e7d32; }
+        .d-down { color: #c62828; }
+        .d-flat { color: #aaa; }
+
+        /* ── CUTOFF BAR ── */
+        .cutoff-wrap { padding: 8px 16px 14px; }
+        .cutoff-label {
+            display: flex; justify-content: space-between;
+            font-size: 11px; color: var(--muted); margin-bottom: 5px;
+        }
+        .cutoff-bar-bg {
+            height: 8px; background: var(--gray);
+            border-radius: 4px; overflow: visible; position: relative;
+        }
+        .cutoff-bar-fill {
+            height: 100%; border-radius: 4px;
+            transition: width 0.4s ease, background 0.4s ease;
+        }
+        .cutoff-marker {
+            position: absolute; top: -3px;
+            width: 2px; height: 14px; background: #e74c3c;
+            border-radius: 1px;
+        }
+        .cutoff-note { font-size: 11px; text-align: center; margin-top: 8px; font-weight: 600; }
+
+        /* ── STATUS BANNER ── */
+        .status-banner {
+            margin: 2px 14px 16px;
+            border-radius: 12px; padding: 16px 18px;
+            text-align: center;
+        }
+        .b-safe    { background: var(--safe-bg);    border: 2px solid var(--safe-bd); }
+        .b-warning { background: var(--warning-bg); border: 2px solid var(--warning-bd); }
+        .b-danger  { background: var(--danger-bg);  border: 2px solid var(--danger-bd); }
+
+        .s-title { font-size: 18px; font-weight: 800; }
+        .b-safe    .s-title { color: var(--safe-bd); }
+        .b-warning .s-title { color: #7d5e00; }
+        .b-danger  .s-title { color: var(--danger-bd); }
+        .s-desc { font-size: 13px; margin-top: 5px; line-height: 1.5; }
+        .b-safe    .s-desc { color: #1b5e20; }
+        .b-warning .s-desc { color: #6d4c00; }
+        .b-danger  .s-desc { color: #7f1d1d; }
+
+        /* ── NOTES ── */
+        .notes {
+            background: white;
+            border-radius: 14px;
+            padding: 16px 18px;
+            font-size: 12px; color: var(--muted);
+            line-height: 1.7;
+            box-shadow: var(--card-shadow);
+            border-left: 4px solid #3b82f6;
+        }
+        .notes strong { color: #1e40af; }
+        .notes em { color: var(--text); font-style: normal; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="flag">🇩🇰</div>
+    <h1>Nicolai Højgaard — OWGR Top 50 Simulator</h1>
+    <p>Pick his result in each upcoming tournament to see if he stays inside the world's top 50</p>
+    <div class="data-tag">📅 Data as of 24 March 2026</div>
+</header>
+
+<div class="container">
+
+    <!-- ── CURRENT STATS ── -->
+    <div class="card">
+        <div class="section-label">Current World Ranking Status</div>
+        <div class="stats-row">
+            <div class="stat">
+                <div class="stat-val">#47</div>
+                <div class="stat-label">World Rank</div>
+            </div>
+            <div class="stat">
+                <div class="stat-val">2.051</div>
+                <div class="stat-label">Points Avg</div>
+            </div>
+            <div class="stat">
+                <div class="stat-val">106.7</div>
+                <div class="stat-label">Total Points</div>
+            </div>
+            <div class="stat">
+                <div class="stat-val">52</div>
+                <div class="stat-label">Events (max)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── SCENARIO BUILDER ── -->
+    <div class="card">
+        <div class="section-label">Upcoming Tournaments — Set His Result</div>
+        <div class="toolbar">
+            <button class="btn-reset" onclick="resetAll()">↺ Reset all to WD / Not Playing</button>
+        </div>
+        <div class="tourney-list" id="tourney-list"></div>
+    </div>
+
+    <!-- ── PROJECTION ── -->
+    <div class="card">
+        <div class="section-label">Projected Outcome</div>
+        <div class="proj-row">
+            <div class="proj-stat">
+                <div class="proj-val" id="p-avg" style="color:var(--green)">2.051</div>
+                <div class="proj-label">Avg Points</div>
+                <div class="proj-delta" id="p-avg-d">—</div>
+            </div>
+            <div class="proj-stat">
+                <div class="proj-val" id="p-rank" style="color:var(--green)">#47</div>
+                <div class="proj-label">Est. Ranking</div>
+                <div class="proj-delta" id="p-rank-d">—</div>
+            </div>
+            <div class="proj-stat">
+                <div class="proj-val" id="p-total" style="color:var(--green)">106.7</div>
+                <div class="proj-label">Total Pts</div>
+                <div class="proj-delta" id="p-total-d">—</div>
+            </div>
+        </div>
+
+        <!-- Progress bar vs. top-50 threshold -->
+        <div class="cutoff-wrap">
+            <div class="cutoff-label">
+                <span>Top 50 threshold ≈ 1.95 avg pts</span>
+                <span id="margin-text" style="font-weight:700"></span>
+            </div>
+            <div class="cutoff-bar-bg">
+                <div class="cutoff-bar-fill" id="bar-fill" style="width:0%;background:var(--green)"></div>
+                <!-- marker at top-50 cutoff position -->
+                <div class="cutoff-marker" id="bar-marker"></div>
+            </div>
+            <div class="cutoff-note" id="cutoff-note"></div>
+        </div>
+
+        <!-- Status banner -->
+        <div class="status-banner b-safe" id="status-banner">
+            <div class="s-title" id="s-title">✅ TOP 50 — SAFE</div>
+            <div class="s-desc"  id="s-desc">Choose results above to run the simulation.</div>
+        </div>
+    </div>
+
+    <!-- ── NOTES ── -->
+    <div class="notes">
+        <strong>How the OWGR works:</strong> Players are ranked by their <em>average points</em> across the last 104 weeks (2 rolling years). The divisor is the number of events played, with a minimum of 40 and a maximum of 52 most recent events. Since Nicolai has played 52 events, every new tournament he enters adds fresh points while his <em>oldest event rolls off</em>. This simulator estimates that rolled-off event as equal to his current running average — a reasonable real-world approximation.<br><br>
+        <strong>⚠️ Approximations used:</strong> Win points per tournament are estimates based on typical OWGR field ratings for that event tier (Majors = 100 pts, Signature Events ≈ 55–60 pts, Regular PGA Tour ≈ 28 pts). Actual points vary each week by who enters. The rank estimate near top 50 is calibrated to known data but is not exact — treat projected ranks within ±3 spots as essentially equivalent. Miss Cut = 0 points but the event still counts (rolls off an older result).
+    </div>
+
+</div>
+
+<script>
+/* ============================================================
+   DATA
+   ============================================================ */
+
+const CURRENT = {
+    rank:   47,
+    avg:    2.0512,
+    total:  106.66,
+    events: 52          // already at maximum — new events roll off old ones
+};
+
+const TOP50_AVG = 1.95;   // approximate threshold for #50 in the world
+
+const TOURNAMENTS = [
+    {
+        id: 'texas',
+        name: 'Valero Texas Open',
+        dates: 'Apr 2–5, 2026',
+        type: 'regular',
+        emoji: '🌵',
+        winPts: 28,
+        nocut: false,
+        note: 'Regular PGA Tour field'
+    },
+    {
+        id: 'masters',
+        name: 'The Masters',
+        dates: 'Apr 9–12, 2026',
+        type: 'major',
+        emoji: '🌿',
+        winPts: 100,
+        nocut: false,
+        note: 'Major — 100 pts for win'
+    },
+    {
+        id: 'rbc',
+        name: 'RBC Heritage',
+        dates: 'Apr 16–19, 2026',
+        type: 'signature',
+        emoji: '⚓',
+        winPts: 60,
+        nocut: false,
+        note: 'Signature Event'
+    },
+    {
+        id: 'zurich',
+        name: 'Zurich Classic of New Orleans',
+        dates: 'Apr 24–27, 2026',
+        type: 'regular',
+        emoji: '🤝',
+        winPts: 22,
+        nocut: true,    // team event, no cut
+        note: 'Team event — no cut'
+    },
+    {
+        id: 'wellsfargo',
+        name: 'Wells Fargo Championship',
+        dates: 'May 7–10, 2026',
+        type: 'signature',
+        emoji: '🐎',
+        winPts: 55,
+        nocut: false,
+        note: 'Signature Event'
+    },
+    {
+        id: 'pga',
+        name: 'PGA Championship',
+        dates: 'May 21–24, 2026',
+        type: 'major',
+        emoji: '🥇',
+        winPts: 100,
+        nocut: false,
+        note: 'Major — 100 pts for win'
+    }
+];
+
+/*
+  OWGR points distribution (as % of win value), based on published curve:
+    1st: 100%  |  2nd: 60%  |  3rd: 40%  |  4th: 30%  |  5th: 24%
+    10th: 14%  |  20th: 7%  |  40th: 3.5%  |  60th: 1.5%
+
+  Dropdown groups use the average within each finishing band.
+*/
+const FINISH_OPTIONS = [
+    { val: 'mc',   label: 'Miss Cut',                pct: 0,      played: true  },
+    { val: 't50',  label: 'Top 50 finish (T31–T50)', pct: 0.025,  played: true  },
+    { val: 't30',  label: 'Top 30 finish (T21–T30)', pct: 0.048,  played: true  },
+    { val: 't20',  label: 'Top 20 finish (T11–T20)', pct: 0.090,  played: true  },
+    { val: 't10',  label: 'Top 10 finish (T6–T10)',  pct: 0.165,  played: true  },
+    { val: 't5',   label: 'Top 5 finish (T2–T5)',    pct: 0.385,  played: true  },
+    { val: 'win',  label: '🏆 WIN (1st place)',       pct: 1.000,  played: true  },
+    { val: 'dns',  label: 'WD / Not Playing',         pct: null,   played: false },
+];
+
+/*
+  Points → approximate OWGR rank lookup table.
+  Anchored at known values and interpolated between.
+  Nicolai at 2.051 avg = #47 is our hard anchor.
+*/
+const RANK_TABLE = [
+    [14.0,   1], [10.5,  2], [8.0,   3], [6.5,   4], [5.5,   5],
+    [4.8,    7], [4.2,  10], [3.7,  13], [3.3,  17], [2.95, 22],
+    [2.70,  27], [2.45, 32], [2.25, 38], [2.10, 43],
+    [2.051, 47],   // ← Nicolai's known anchor
+    [1.950, 50],   // ← approximate top-50 cutoff
+    [1.800, 56], [1.650, 64], [1.500, 74], [1.350, 87],
+    [1.200, 103], [1.000, 125], [0.800, 155], [0.600, 190]
+];
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+
+function avgToRank(avg) {
+    if (avg >= RANK_TABLE[0][0]) return RANK_TABLE[0][1];
+    for (let i = 0; i < RANK_TABLE.length - 1; i++) {
+        const [hiA, hiR] = RANK_TABLE[i];
+        const [loA, loR] = RANK_TABLE[i + 1];
+        if (avg <= hiA && avg >= loA) {
+            const t = (avg - loA) / (hiA - loA);
+            return Math.round(loR - t * (loR - hiR));
+        }
+    }
+    const [lastA, lastR] = RANK_TABLE[RANK_TABLE.length - 1];
+    return Math.min(300, Math.round(lastR + (lastA - avg) * 120));
+}
+
+function deltaHtml(val, decimals, suffix, invert = false) {
+    const good = invert ? val < 0 : val > 0;
+    const bad  = invert ? val > 0 : val < 0;
+    const cls  = good ? 'd-up' : bad ? 'd-down' : 'd-flat';
+    const arr  = good ? '▲ '   : bad ? '▼ '      : '';
+    const sign = val > 0 ? '+' : '';
+    return `<span class="${cls}">${arr}${sign}${val.toFixed(decimals)}${suffix}</span>`;
+}
+
+/* ============================================================
+   RENDER TOURNAMENT ROWS
+   ============================================================ */
+
+function buildRows() {
+    const list = document.getElementById('tourney-list');
+    list.innerHTML = '';
+
+    TOURNAMENTS.forEach(t => {
+        const badgeCls = 'b-' + t.type;
+        const tagCls   = 'tg-' + t.type;
+        const typeName = { major: 'Major', signature: 'Signature Event', regular: 'PGA Tour' }[t.type];
+
+        const opts = FINISH_OPTIONS.map(o => {
+            // For no-cut events, replace "Miss Cut" with a made-cut bottom label
+            if (t.nocut && o.val === 'mc') {
+                return `<option value="mc">Bottom half (made cut)</option>`;
+            }
+            const selected = o.val === 'dns' ? ' selected' : '';
+            return `<option value="${o.val}"${selected}>${o.label}</option>`;
+        }).join('');
+
+        const row = document.createElement('div');
+        row.className = 'tourney-row';
+        row.innerHTML = `
+            <div class="t-badge ${badgeCls}">${t.emoji}</div>
+            <div class="t-info">
+                <div class="t-name">${t.name}</div>
+                <div class="t-date">${t.dates}${t.nocut ? ' &nbsp;·&nbsp; No cut' : ''}</div>
+                <span class="t-tag ${tagCls}">${typeName}</span>
+                <span class="t-winpts">Win = ${t.winPts} pts</span>
+            </div>
+            <select class="t-select" id="sel-${t.id}" onchange="calculate()">
+                ${opts}
+            </select>
+            <div class="t-pts">
+                <div class="pts-v c-na" id="pts-${t.id}">—</div>
+                <div class="pts-l">pts</div>
+            </div>
+        `;
+        list.appendChild(row);
+    });
+}
+
+function resetAll() {
+    TOURNAMENTS.forEach(t => {
+        const sel = document.getElementById(`sel-${t.id}`);
+        if (sel) sel.value = 'dns';
+    });
+    calculate();
+}
+
+/* ============================================================
+   CALCULATE
+   ============================================================ */
+
+function calculate() {
+    let runTotal = CURRENT.total;
+    let runAvg   = CURRENT.avg;
+
+    TOURNAMENTS.forEach(t => {
+        const sel = document.getElementById(`sel-${t.id}`);
+        if (!sel) return;
+
+        const opt      = FINISH_OPTIONS.find(o => o.val === sel.value) || FINISH_OPTIONS[0];
+        const ptsElem  = document.getElementById(`pts-${t.id}`);
+
+        if (!opt.played) {
+            // WD / DNS — no event counted, nothing changes
+            ptsElem.textContent = '—';
+            ptsElem.className   = 'pts-v c-na';
+            return;
+        }
+
+        const earned = t.winPts * (opt.pct ?? 0);
+
+        // Each new event rolls off the oldest one; approximate rolled-off = running avg
+        runTotal = runTotal - runAvg + earned;
+        runAvg   = runTotal / 52;          // events stays capped at 52
+
+        if (earned < 0.005) {
+            ptsElem.textContent = '0';
+            ptsElem.className   = 'pts-v c-zero';
+        } else {
+            ptsElem.textContent = '+' + earned.toFixed(2);
+            ptsElem.className   = 'pts-v c-pos';
+        }
+    });
+
+    const projAvg   = runAvg;
+    const projTotal = runTotal;
+    const projRank  = avgToRank(projAvg);
+
+    /* ── Update stat boxes ── */
+    const avgElem = document.getElementById('p-avg');
+    avgElem.textContent  = projAvg.toFixed(3);
+    avgElem.style.color  = projAvg >= TOP50_AVG ? 'var(--green)' : 'var(--danger)';
+
+    const rankElem = document.getElementById('p-rank');
+    rankElem.textContent = '#' + projRank;
+    rankElem.style.color = projRank <= 50 ? 'var(--green)' : 'var(--danger)';
+
+    document.getElementById('p-total').textContent = projTotal.toFixed(1);
+
+    /* ── Deltas ── */
+    const dAvg   = projAvg   - CURRENT.avg;
+    const dRank  = CURRENT.rank - projRank;    // positive = ranking number dropped = improved
+    const dTotal = projTotal - CURRENT.total;
+
+    document.getElementById('p-avg-d').innerHTML   = deltaHtml(dAvg,   3, ' avg');
+    document.getElementById('p-rank-d').innerHTML  = deltaHtml(dRank,  0, ' spots');
+    document.getElementById('p-total-d').innerHTML = deltaHtml(dTotal, 1, ' pts');
+
+    /* ── Progress bar (0 = 1.5 avg, 100 = 2.6 avg) ── */
+    const barMin = 1.50, barMax = 2.60;
+    const fillPct    = Math.max(0, Math.min(100, (projAvg - barMin)  / (barMax - barMin) * 100));
+    const markerPct  = Math.max(0, Math.min(100, (TOP50_AVG - barMin) / (barMax - barMin) * 100));
+
+    const barFill    = document.getElementById('bar-fill');
+    const barMarker  = document.getElementById('bar-marker');
+    barFill.style.width      = fillPct + '%';
+    barFill.style.background = projAvg >= TOP50_AVG ? 'var(--green-mid)' : '#e74c3c';
+    barMarker.style.left     = markerPct + '%';
+
+    const margin = projAvg - TOP50_AVG;
+    const marginElem = document.getElementById('margin-text');
+    if (margin >= 0) {
+        marginElem.textContent = `+${margin.toFixed(3)} pts above cutoff`;
+        marginElem.style.color = 'var(--green)';
+    } else {
+        marginElem.textContent = `${margin.toFixed(3)} pts BELOW cutoff`;
+        marginElem.style.color = '#c62828';
+    }
+    document.getElementById('cutoff-note').textContent =
+        `Projected avg: ${projAvg.toFixed(3)}  ·  Top-50 threshold: ~${TOP50_AVG.toFixed(2)}`;
+
+    /* ── Status banner ── */
+    const banner = document.getElementById('status-banner');
+    const sTitle = document.getElementById('s-title');
+    const sDesc  = document.getElementById('s-desc');
+
+    if (projRank <= 40) {
+        banner.className = 'status-banner b-safe';
+        sTitle.textContent = `✅ TOP 50 — VERY SAFE (#${projRank})`;
+        sDesc.textContent  = `Well inside the top 50 with a solid cushion. Ranking looks secure over this stretch.`;
+    } else if (projRank <= 48) {
+        banner.className = 'status-banner b-warning';
+        sTitle.textContent = `⚠️ TOP 50 — INSIDE BUT TIGHT (#${projRank})`;
+        sDesc.textContent  = `Still inside the top 50, but the margin is thin. A bad week or two could push him out.`;
+    } else if (projRank <= 52) {
+        banner.className = 'status-banner b-warning';
+        sTitle.textContent = `⚠️ TOP 50 — RIGHT ON THE BUBBLE (#${projRank})`;
+        sDesc.textContent  = `Sitting right on the edge. These rankings are estimates — he could be in or out depending on others' results too.`;
+    } else if (projRank <= 65) {
+        banner.className = 'status-banner b-danger';
+        sTitle.textContent = `❌ OUTSIDE TOP 50 (#${projRank})`;
+        sDesc.textContent  = `Slipped out of the top 50. Would need at least one solid result to get back inside.`;
+    } else {
+        banner.className = 'status-banner b-danger';
+        sTitle.textContent = `❌ WELL OUTSIDE TOP 50 (#${projRank})`;
+        sDesc.textContent  = `Significantly outside the top 50. Would need multiple strong results to recover.`;
+    }
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+buildRows();
+calculate();
+</script>
+
+</body>
+</html>
